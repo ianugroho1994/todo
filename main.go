@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,8 +12,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello World")
-
 	var configFileName string
 	flag.StringVar(&configFileName, "c", "config.yml", "Config file name")
 
