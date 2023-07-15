@@ -1,0 +1,22 @@
+version: "3.3"
+networks:
+  database-postgres:
+    name: "postgre-db-net"
+    external: true
+services:
+  todo-be:
+    container_name: todo-be
+    image: ghcr.io/ianugroho1994/todo-be:merge
+    pull_policy: always
+    networks:
+      - database-postgres
+    ports:
+      - 1326:1326
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.todo.tls=true
+      - traefik.http.routers.todo.tls.certresolver=lets-encrypt
+      - traefik.http.routers.todo.rule=Host(`todo.ianugroho.com`) && PathPrefix(`/v1`)
+      - traefik.http.routers.todo.middlewares=todo-stripprefix
+      - traefik.http.middlewares.todo-stripprefix.stripprefix.prefixes=/v1
+      - traefik.http.routers.todo.priority=110
