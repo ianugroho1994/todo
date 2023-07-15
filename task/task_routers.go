@@ -18,15 +18,13 @@ func TaskRouters() *chi.Mux {
 
 	r := chi.NewMux()
 
-	r.Route("/tasks", func(r chi.Router) {
-		r.Get("/{project_id}", listTasksByProjectHandler)
-		r.Get("/{id}", getTaskByIDHandler)
-		r.Post("/", createTaskHandler)
-		r.Put("/{id}", createTaskHandler)
-		r.Delete("/{id}", deleteTaskHandler)
-		r.Put("/{id}/done", makeTaskDoneHandler)
-		r.Put("/{id}/todo", makeTaskTodoHandler)
-	})
+	r.Get("/{project_id}", listTasksByProjectHandler)
+	r.Get("/{id}", getTaskByIDHandler)
+	r.Post("/", createTaskHandler)
+	r.Put("/{id}", createTaskHandler)
+	r.Delete("/{id}", deleteTaskHandler)
+	r.Put("/{id}/done", makeTaskDoneHandler)
+	r.Put("/{id}/todo", makeTaskTodoHandler)
 
 	return r
 }

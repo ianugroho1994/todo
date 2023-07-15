@@ -46,9 +46,9 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 
-	r.Mount("/todo", task.TaskRouters())
-	r.Mount("/todo", project.ProjectRouters())
-	r.Mount("/todo", group.GroupRouters())
+	r.Mount("/todo/tasks", task.TaskRouters())
+	r.Mount("/todo/projects", project.ProjectRouters())
+	r.Mount("/todo/groups", group.GroupRouters())
 
 	log.Info().Msg("Starting up server...")
 

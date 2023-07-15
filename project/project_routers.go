@@ -18,12 +18,10 @@ func ProjectRouters() *chi.Mux {
 
 	r := chi.NewMux()
 
-	r.Route("/projects", func(r chi.Router) {
-		r.Get("/{group_id}", listProjectsByGroupHandler)
-		r.Post("/", createProjectHandler)
-		r.Put("/{id}", createProjectHandler)
-		r.Delete("/{id}", deleteProjectHandler)
-	})
+	r.Get("/{group_id}", listProjectsByGroupHandler)
+	r.Post("/", createProjectHandler)
+	r.Put("/{id}", createProjectHandler)
+	r.Delete("/{id}", deleteProjectHandler)
 
 	return r
 }

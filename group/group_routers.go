@@ -18,12 +18,10 @@ func GroupRouters() *chi.Mux {
 
 	r := chi.NewMux()
 
-	r.Route("/groups", func(r chi.Router) {
-		r.Get("/", listGroupsByGroupHandler)
-		r.Post("/", createGroupHandler)
-		r.Put("/{id}", createGroupHandler)
-		r.Delete("/{id}", deleteProjectHandler)
-	})
+	r.Get("/", listGroupsByGroupHandler)
+	r.Post("/", createGroupHandler)
+	r.Put("/{id}", createGroupHandler)
+	r.Delete("/{id}", deleteProjectHandler)
 
 	return r
 }
