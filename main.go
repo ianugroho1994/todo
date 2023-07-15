@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ianugroho1994/todo/project"
 	"github.com/ianugroho1994/todo/shared"
 	"github.com/ianugroho1994/todo/task"
 	"github.com/jmoiron/sqlx"
@@ -53,6 +54,7 @@ func main() {
 	r.Use(middleware.Logger)
 
 	r.Mount("/todo", task.TaskRouters())
+	r.Mount("/todo", project.ProjectRouters())
 
 	log.Info().Msg("Starting up server...")
 
