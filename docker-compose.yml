@@ -4,9 +4,9 @@ networks:
     name: "postgre-db-net"
     external: true
 services:
-  gowebserver:
+  todo-be:
     container_name: todo-be
-    image: ghcr.io/ianugroho1994/todo-be:latest
+    image: ghcr.io/ianugroho1994/todo-be:merge
     pull_policy: always
     networks:
       - database-postgres
