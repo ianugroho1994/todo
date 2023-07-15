@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ianugroho1994/todo/group"
 	"github.com/ianugroho1994/todo/project"
 	"github.com/ianugroho1994/todo/shared"
 	"github.com/ianugroho1994/todo/task"
@@ -55,6 +56,7 @@ func main() {
 
 	r.Mount("/todo", task.TaskRouters())
 	r.Mount("/todo", project.ProjectRouters())
+	r.Mount("/todo", group.GroupRouters())
 
 	log.Info().Msg("Starting up server...")
 

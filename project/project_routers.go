@@ -69,16 +69,14 @@ func createProjectHandler(w http.ResponseWriter, request *http.Request) {
 	}
 
 	title := request.FormValue("title")
-	description := request.FormValue("description")
-	links := request.FormValue("links")
-	projectIDForm := request.FormValue("project_id")
-	projectID, err := ulid.Parse(projectIDForm)
+	groupIDForm := request.FormValue("group_id")
+	groupID, err := ulid.Parse(groupIDForm)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp, err := projectService.UpdateProject(ctx, id.String(), title, description, links, projectID.String())
+	resp, err := projectService.UpdateProject(ctx, id.String(), title, groupID.String())
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
