@@ -10,7 +10,7 @@ import (
 type ProjectItem struct {
 	ID        ulid.ULID `json:"id" db:"id"`
 	Title     string    `json:"title" db:"title"`
-	GroupID   string    `json:"project_id" db:"project_id"`
+	GroupID   string    `json:"group_id" db:"group_id"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
