@@ -32,7 +32,7 @@ func main() {
 
 	log.Debug().Any("config", cfg).Msg("config loaded")
 
-	dbConn, err := sqlx.Connect(`mysql`, cfg.DBConfig.ConnStr())
+	dbConn, err := sqlx.Connect(`postgres`, cfg.DBConfig.ConnStr())
 	if err != nil {
 		log.Error().Err(err).Msg("unable to connect to database")
 	}

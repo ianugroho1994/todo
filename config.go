@@ -59,10 +59,10 @@ func defaultPgConfig() pgConfig {
 }
 
 func (p *pgConfig) loadFromEnv() {
-	loadEnvStr("KAD_DB_HOST", &p.Host)
-	loadEnvUint("KAD_DB_PORT", &p.Port)
-	loadEnvStr("KAD_DB_NAME", &p.DBName)
-	loadEnvStr("KAD_DB_SSL", &p.SslMode)
+	loadEnvStr("IN_DB_HOST", &p.Host)
+	loadEnvUint("IN_DB_PORT", &p.Port)
+	loadEnvStr("IN_DB_NAME", &p.DBName)
+	loadEnvStr("IN_DB_SSL", &p.SslMode)
 
 }
 
@@ -83,8 +83,8 @@ func defaultListenConfig() listenConfig {
 }
 
 func (l *listenConfig) loadFromEnv() {
-	loadEnvStr("KAD_LISTEN_HOST", &l.Host)
-	loadEnvUint("KAD_LISTEN_PORT", &l.Port)
+	loadEnvStr("IN_LISTEN_HOST", &l.Host)
+	loadEnvUint("IN_LISTEN_PORT", &l.Port)
 }
 
 type config struct {
