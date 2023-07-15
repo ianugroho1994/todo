@@ -9,17 +9,17 @@ import (
 )
 
 type TaskItem struct {
-	ID          ulid.ULID `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Link        []string  `json:"link"`
-	ProjectID   int       `json:"project_id"`
-	IsTodo      bool      `json:"is_todo"`
-	CreatedAt   time.Time `json:"created_at"`
-	DoneAt      null.Time `json:"updated_at"`
+	ID          ulid.ULID `json:"id" db:"id"`
+	Title       string    `json:"title" db:"title"`
+	Description string    `json:"description" db:"description"`
+	Link        string    `json:"link" db:"link"`
+	ProjectID   string    `json:"project_id" db:"project_id"`
+	IsTodo      bool      `json:"is_todo" db:"is_todo"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	DoneAt      null.Time `json:"done_at" db:"done_at"`
 }
 
-func NewTaskItem(title, description string, links []string, projectID int) (*TaskItem, error) {
+func NewTaskItem(title, description string, links string, projectID string) (*TaskItem, error) {
 	if title == "" {
 		return nil, errors.New("todo: title is required")
 	}
@@ -57,6 +57,6 @@ func (t *TaskItem) MakeAsTodo() error {
 	return nil
 }
 
-func (t *TaskItem) AssignToProject(projectID int) {
+func (t *TaskItem) AssignToProject(projectID string) {
 	t.ProjectID = projectID
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/ianugroho1994/todo/shared"
+	"github.com/ianugroho1994/todo/task"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 )
@@ -35,7 +36,7 @@ func main() {
 	}
 	err = dbConn.Ping()
 	if err != nil {
-		log.Fatal().Msg(err.Error())
+		log.Fatal().Err(err).Msg("cannot ping db")
 	}
 
 	defer func() {
@@ -50,6 +51,8 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
+
+	r.Mount("/todo", task.TaskRouters())
 
 	log.Info().Msg("Starting up server...")
 

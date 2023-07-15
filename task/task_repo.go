@@ -13,16 +13,15 @@ import (
 type TaskRepository interface {
 	Store(ctx context.Context, task *TaskItem) error
 	GetByID(ctx context.Context, id string) (*TaskItem, error)
-	GetByProjectID(ctx context.Context, projectID int) ([]*TaskItem, error)
+	GetByProjectID(ctx context.Context, projectID string) ([]*TaskItem, error)
 	Delete(ctx context.Context, id string) error
-	Update(ctx context.Context, task *TaskItem) error
 }
 
 type TaskRepositoryImpl struct {
 	DBConnection *sqlx.DB
 }
 
-func NewTaskRepository() *TaskRepositoryImpl {
+func NewTaskRepository() TaskRepository {
 	return &TaskRepositoryImpl{
 		DBConnection: shared.DBConnection,
 	}
@@ -66,7 +65,7 @@ func (r *TaskRepositoryImpl) GetByID(ctx context.Context, id string) (*TaskItem,
 	return res[0], nil
 }
 
-func (r *TaskRepositoryImpl) GetByProjectID(ctx context.Context, projectID int) ([]*TaskItem, error) {
+func (r *TaskRepositoryImpl) GetByProjectID(ctx context.Context, projectID string) ([]*TaskItem, error) {
 	query := `SELECT * FROM tasks WHERE project_id = ?`
 	res, err := r.fetch(ctx, query, projectID)
 	if err != nil {
@@ -84,7 +83,9 @@ func (r *TaskRepositoryImpl) GetByProjectID(ctx context.Context, projectID int) 
 func (r *TaskRepositoryImpl) fetch(ctx context.Context, query string, args ...interface{}) (result []*TaskItem, err error) {
 	rows, err := r.DBConnection.QueryxContext(ctx, query, args...)
 	if err != nil {
+		return nil, err
 	}
+
 	defer func() {
 		err := rows.Close()
 		if err != nil {
@@ -116,9 +117,5 @@ func (r *TaskRepositoryImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	fmt.Println("Delete affected: %d", affect)
-	return nil
-}
-
-func (r *TaskRepositoryImpl) Update(task *TaskItem) error {
 	return nil
 }
