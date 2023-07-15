@@ -5,42 +5,33 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ianugroho1994/todo/shared"
-
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
 )
 
 type ProjectRepository interface {
-	Store(ctx context.Context, task *ProjectItem) error
-	GetByGroupID(ctx context.Context, projectID string) ([]*ProjectItem, error)
-	GetByID(ctx context.Context, id string) (*ProjectItem, error)
-	Delete(ctx context.Context, id string) error
+	Store(ctx context.Context, tx pgx.Tx, task *ProjectItem) error
+	GetByGroupID(ctx context.Context, tx pgx.Tx, projectID string) ([]*ProjectItem, error)
+	GetByID(ctx context.Context, tx pgx.Tx, id string) (*ProjectItem, error)
+	Delete(ctx context.Context, tx pgx.Tx, id string) error
 }
 
-type ProjectRepositoryImpl struct {
-	DBConnection *sqlx.DB
-}
+type ProjectRepositoryImpl struct{}
 
 func NewProjectRepository() ProjectRepository {
-	return &ProjectRepositoryImpl{
-		DBConnection: shared.DBConnection,
-	}
+	return &ProjectRepositoryImpl{}
 }
 
-func (r *ProjectRepositoryImpl) Store(ctx context.Context, project *ProjectItem) error {
+func (r *ProjectRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, project *ProjectItem) error {
 	query := `INSERT INTO projects (id, title, group_id) VALUES (?, ?, ?)
 	ON CONFLICT(id)
-	DO UPDATE SET title= ?$2 and done_at= $7 and description= $3 and link= $4 and project_id= $5 and is_todo= $6`
+	DO UPDATE SET title= ?$2 and group_id= $3`
 
-	res, err := r.DBConnection.ExecContext(ctx, query, project.ID, project.Title, project.GroupID)
+	res, err := tx.Exec(ctx, query, project.ID, project.Title, project.GroupID)
 	if err != nil {
 		return err
 	}
 
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
+	affected := res.RowsAffected()
 
 	if affected != 1 {
 		return errors.New("todo: failed to store project")
@@ -49,11 +40,11 @@ func (r *ProjectRepositoryImpl) Store(ctx context.Context, project *ProjectItem)
 	return nil
 }
 
-func (r *ProjectRepositoryImpl) GetByID(ctx context.Context, id string) (*ProjectItem, error) {
+func (r *ProjectRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string) (*ProjectItem, error) {
 	query := `SELECT * FROM projects WHERE id = ?`
-	res, err := r.fetch(ctx, query, id)
+	res, err := r.fetch(ctx, tx, query, id)
 	if err != nil {
-		err = errors.New("todo: failed to fetch task")
+		err = errors.New("todo: failed to fetch project")
 		return nil, err
 	}
 
@@ -64,9 +55,9 @@ func (r *ProjectRepositoryImpl) GetByID(ctx context.Context, id string) (*Projec
 	return res[0], nil
 }
 
-func (r *ProjectRepositoryImpl) GetByGroupID(ctx context.Context, groupID string) ([]*ProjectItem, error) {
+func (r *ProjectRepositoryImpl) GetByGroupID(ctx context.Context, tx pgx.Tx, groupID string) ([]*ProjectItem, error) {
 	query := `SELECT * FROM projects WHERE group_id = ?`
-	res, err := r.fetch(ctx, query, groupID)
+	res, err := r.fetch(ctx, tx, query, groupID)
 	if err != nil {
 		err = errors.New("todo: failed to fetch task")
 		return nil, err
@@ -79,14 +70,14 @@ func (r *ProjectRepositoryImpl) GetByGroupID(ctx context.Context, groupID string
 	return res, nil
 }
 
-func (r *ProjectRepositoryImpl) fetch(ctx context.Context, query string, args ...interface{}) (result []*ProjectItem, err error) {
-	rows, err := r.DBConnection.QueryxContext(ctx, query, args...)
+func (r *ProjectRepositoryImpl) fetch(ctx context.Context, tx pgx.Tx, query string, args ...interface{}) (result []*ProjectItem, err error) {
+	rows, err := tx.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		err := rows.Close()
+		rows.Close()
 		if err != nil {
 			panic(err)
 		}
@@ -94,7 +85,7 @@ func (r *ProjectRepositoryImpl) fetch(ctx context.Context, query string, args ..
 
 	for rows.Next() {
 		t := &ProjectItem{}
-		err = rows.StructScan(t)
+		err = rows.Scan(&t.ID, &t.Title, &t.GroupID, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -104,17 +95,14 @@ func (r *ProjectRepositoryImpl) fetch(ctx context.Context, query string, args ..
 	return result, nil
 }
 
-func (r *ProjectRepositoryImpl) Delete(ctx context.Context, id string) error {
+func (r *ProjectRepositoryImpl) Delete(ctx context.Context, tx pgx.Tx, id string) error {
 	query := `DELETE FROM projects WHERE id = ?`
 
-	res, err := r.DBConnection.ExecContext(ctx, query, id)
+	res, err := tx.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
-	affect, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	fmt.Println("Delete affected: %d", affect)
+	affected := res.RowsAffected()
+	fmt.Println("Delete affected: %d", affected)
 	return nil
 }

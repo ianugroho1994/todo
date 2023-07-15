@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"net/http"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/ianugroho1994/todo/project"
 	"github.com/ianugroho1994/todo/shared"
 	"github.com/ianugroho1994/todo/task"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
 
@@ -32,23 +33,14 @@ func main() {
 
 	log.Debug().Any("config", cfg).Msg("config loaded")
 
-	dbConn, err := sqlx.Connect(`postgres`, cfg.DBConfig.ConnStr())
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, cfg.DBConfig.ConnStr())
+	//dbConn, err := sqlx.Connect(`postgres`, cfg.DBConfig.ConnStr())
 	if err != nil {
 		log.Error().Err(err).Msg("unable to connect to database")
 	}
-	err = dbConn.Ping()
-	if err != nil {
-		log.Fatal().Err(err).Msg("cannot ping db")
-	}
 
-	defer func() {
-		err := dbConn.Close()
-		if err != nil {
-			log.Fatal().Msg(err.Error())
-		}
-	}()
-
-	shared.SetDBConnection(dbConn)
+	shared.SetPGXPool(pool)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)

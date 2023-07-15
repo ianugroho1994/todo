@@ -5,43 +5,33 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ianugroho1994/todo/shared"
-
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
 )
 
 type GroupRepository interface {
-	Store(ctx context.Context, task *GroupItem) error
-	GetAll(ctx context.Context) ([]*GroupItem, error)
-	GetByID(ctx context.Context, id string) (*GroupItem, error)
-	Delete(ctx context.Context, id string) error
+	Store(ctx context.Context, tx pgx.Tx, task *GroupItem) error
+	GetAll(ctx context.Context, tx pgx.Tx) ([]*GroupItem, error)
+	GetByID(ctx context.Context, tx pgx.Tx, id string) (*GroupItem, error)
+	Delete(ctx context.Context, tx pgx.Tx, id string) error
 }
 
-type GroupRepositoryImpl struct {
-	DBConnection *sqlx.DB
-}
+type GroupRepositoryImpl struct{}
 
 func NewGroupRepository() GroupRepository {
-	return &GroupRepositoryImpl{
-		DBConnection: shared.DBConnection,
-	}
+	return &GroupRepositoryImpl{}
 }
 
-func (r *GroupRepositoryImpl) Store(ctx context.Context, project *GroupItem) error {
+func (r *GroupRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, project *GroupItem) error {
 	query := `INSERT INTO groups (id, name) VALUES (?, ?)
 	ON CONFLICT(id)
 	DO UPDATE SET name = $2`
 
-	res, err := r.DBConnection.ExecContext(ctx, query, project.ID, project.Name)
+	res, err := tx.Exec(ctx, query, project.ID, project.Name)
 	if err != nil {
 		return err
 	}
 
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-
+	affected := res.RowsAffected()
 	if affected != 1 {
 		return errors.New("todo: failed to store group")
 	}
@@ -49,9 +39,9 @@ func (r *GroupRepositoryImpl) Store(ctx context.Context, project *GroupItem) err
 	return nil
 }
 
-func (r *GroupRepositoryImpl) GetByID(ctx context.Context, id string) (*GroupItem, error) {
+func (r *GroupRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string) (*GroupItem, error) {
 	query := `SELECT * FROM groups WHERE id = ?`
-	res, err := r.fetch(ctx, query, id)
+	res, err := r.fetch(ctx, tx, query, id)
 	if err != nil {
 		err = errors.New("todo: failed to fetch group")
 		return nil, err
@@ -64,9 +54,9 @@ func (r *GroupRepositoryImpl) GetByID(ctx context.Context, id string) (*GroupIte
 	return res[0], nil
 }
 
-func (r *GroupRepositoryImpl) GetAll(ctx context.Context) ([]*GroupItem, error) {
+func (r *GroupRepositoryImpl) GetAll(ctx context.Context, tx pgx.Tx) ([]*GroupItem, error) {
 	query := `SELECT * FROM groups ORDER BY created_at DESC`
-	res, err := r.fetch(ctx, query)
+	res, err := r.fetch(ctx, tx, query)
 	if err != nil {
 		err = errors.New("todo: failed to fetch task")
 		return nil, err
@@ -79,14 +69,14 @@ func (r *GroupRepositoryImpl) GetAll(ctx context.Context) ([]*GroupItem, error) 
 	return res, nil
 }
 
-func (r *GroupRepositoryImpl) fetch(ctx context.Context, query string, args ...interface{}) (result []*GroupItem, err error) {
-	rows, err := r.DBConnection.QueryxContext(ctx, query, args...)
+func (r *GroupRepositoryImpl) fetch(ctx context.Context, tx pgx.Tx, query string, args ...interface{}) (result []*GroupItem, err error) {
+	rows, err := tx.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		err := rows.Close()
+		rows.Close()
 		if err != nil {
 			panic(err)
 		}
@@ -94,7 +84,7 @@ func (r *GroupRepositoryImpl) fetch(ctx context.Context, query string, args ...i
 
 	for rows.Next() {
 		t := &GroupItem{}
-		err = rows.StructScan(t)
+		err = rows.Scan(&t.ID, &t.Name, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -104,17 +94,14 @@ func (r *GroupRepositoryImpl) fetch(ctx context.Context, query string, args ...i
 	return result, nil
 }
 
-func (r *GroupRepositoryImpl) Delete(ctx context.Context, id string) error {
+func (r *GroupRepositoryImpl) Delete(ctx context.Context, tx pgx.Tx, id string) error {
 	query := `DELETE FROM groups WHERE id = ?`
 
-	res, err := r.DBConnection.ExecContext(ctx, query, id)
+	res, err := tx.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
-	affect, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	fmt.Println("Delete affected: %d", affect)
+	affected := res.RowsAffected()
+	fmt.Println("Delete affected: %d", affected)
 	return nil
 }

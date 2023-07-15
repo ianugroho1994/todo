@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/ianugroho1994/todo/shared"
+	"github.com/jackc/pgx/v5"
 )
 
 type TaskService interface {
@@ -28,23 +29,35 @@ func NewTaskService(taskRepo TaskRepository) TaskService {
 }
 
 func (s *TaskServiceImpl) ListTasksByProject(ctx context.Context, projectID string) ([]*TaskItem, error) {
-	res, err := s.taskRepository.GetByProjectID(ctx, projectID)
+	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to get task by project id")
 		return nil, err
 	}
 
-	return res, nil
+	res, err := s.taskRepository.GetByProjectID(ctx, tx, projectID)
+	if err != nil {
+		shared.Log.Error().Err(err).Msg("todo: failed to get task by project id")
+		tx.Rollback(ctx)
+		return nil, err
+	}
+
+	return res, tx.Commit(ctx)
 }
 
 func (s *TaskServiceImpl) GetTaskByID(ctx context.Context, id string) (*TaskItem, error) {
-	res, err := s.taskRepository.GetByID(ctx, id)
+	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to get task by project id")
 		return nil, err
 	}
 
-	return res, nil
+	res, err := s.taskRepository.GetByID(ctx, tx, id)
+	if err != nil {
+		shared.Log.Error().Err(err).Msg("todo: failed to get task by project id")
+		tx.Rollback(ctx)
+		return nil, err
+	}
+
+	return res, tx.Commit(ctx)
 }
 
 func (s *TaskServiceImpl) CreateTask(ctx context.Context, title string, description string, links string, projectID string) (*TaskItem, error) {
@@ -58,18 +71,30 @@ func (s *TaskServiceImpl) CreateTask(ctx context.Context, title string, descript
 		return nil, err
 	}
 
-	err = s.taskRepository.Store(ctx, todoItem)
+	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to store task item")
 		return nil, err
 	}
 
-	return todoItem, nil
+	err = s.taskRepository.Store(ctx, tx, todoItem)
+	if err != nil {
+		shared.Log.Error().Err(err).Msg("todo: failed to store task item")
+		tx.Rollback(ctx)
+		return nil, err
+	}
+
+	return todoItem, tx.Commit(ctx)
 }
 
 func (s *TaskServiceImpl) UpdateTask(ctx context.Context, id string, title, description string, links string, projectID string) (*TaskItem, error) {
-	res, err := s.fetchByID(ctx, id)
+	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	res, err := s.fetchByID(ctx, tx, id)
+	if err != nil {
+		tx.Rollback(ctx)
 		return nil, err
 	}
 
@@ -78,67 +103,90 @@ func (s *TaskServiceImpl) UpdateTask(ctx context.Context, id string, title, desc
 	res.Link = links
 	res.ProjectID = projectID
 
-	err = s.taskRepository.Store(ctx, res)
+	err = s.taskRepository.Store(ctx, tx, res)
 	if err != nil {
 		shared.Log.Error().Err(err).Msg("todo: failed to store task item")
+		tx.Rollback(ctx)
 		return nil, err
 	}
 
-	return res, nil
+	return res, tx.Commit(ctx)
 }
 
 func (s *TaskServiceImpl) DeleteTask(ctx context.Context, id string) error {
-	err := s.taskRepository.Delete(ctx, id)
+	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to delete task item")
 		return err
 	}
 
-	return nil
+	err = s.taskRepository.Delete(ctx, tx, id)
+	if err != nil {
+		shared.Log.Error().Err(err).Msg("todo: failed to delete task item")
+		tx.Rollback(ctx)
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (s *TaskServiceImpl) MakeTaskDone(ctx context.Context, id string) error {
-	res, err := s.fetchByID(ctx, id)
+	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
+		return err
+	}
+
+	res, err := s.fetchByID(ctx, tx, id)
+	if err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
 
 	if err = res.MakeDone(); err != nil {
 		shared.Log.Error().Err(err).Msg("todo: failed to make task done")
+		tx.Rollback(ctx)
 		return err
 	}
 
-	err = s.taskRepository.Store(ctx, res)
+	err = s.taskRepository.Store(ctx, tx, res)
 	if err != nil {
 		shared.Log.Error().Err(err).Msg("todo: failed to store task item")
+		tx.Rollback(ctx)
 		return err
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *TaskServiceImpl) MakeTaskTodo(ctx context.Context, id string) error {
-	res, err := s.fetchByID(ctx, id)
+	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err = res.MakeDone(); err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to make task done")
+	res, err := s.fetchByID(ctx, tx, id)
+	if err != nil {
+		tx.Rollback(ctx)
 		return err
 	}
 
-	err = s.taskRepository.Store(ctx, res)
+	if err = res.MakeAsTodo(); err != nil {
+		shared.Log.Error().Err(err).Msg("todo: failed to make task done")
+		tx.Rollback(ctx)
+		return err
+	}
+
+	err = s.taskRepository.Store(ctx, tx, res)
 	if err != nil {
 		shared.Log.Error().Err(err).Msg("todo: failed to store task item")
+		tx.Rollback(ctx)
 		return err
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
-func (s *TaskServiceImpl) fetchByID(ctx context.Context, id string) (*TaskItem, error) {
-	res, err := s.taskRepository.GetByID(ctx, id)
+func (s *TaskServiceImpl) fetchByID(ctx context.Context, tx pgx.Tx, id string) (*TaskItem, error) {
+	res, err := s.taskRepository.GetByID(ctx, tx, id)
 	if err != nil {
 		shared.Log.Error().Err(err).Msg("todo: failed to get task by project id")
 		return nil, err
