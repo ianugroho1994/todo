@@ -10,6 +10,7 @@ services:
     pull_policy: always
     networks:
       - database-postgres
+      - traefik-proxy
     ports:
       - 1326:1326
     labels:

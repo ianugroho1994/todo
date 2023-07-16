@@ -3,6 +3,8 @@ listen:
   port: 8080
 
 db:
+  user: postgres
+  password: postgres
   db_name: todo
   host: 127.0.0.1
   port: 5432 

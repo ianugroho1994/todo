@@ -1,2 +1,11 @@
+listen:
+  host: 127.0.0.1
+  port: 8080
+
 db:
-  db_name: kad_todo
+  user: postgres
+  password: postgres
+  db_name: todo
+  host: 127.0.0.1
+  port: 5432 
+  ssl_mode: disable
