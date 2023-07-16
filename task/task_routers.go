@@ -74,6 +74,7 @@ func createTaskHandler(w http.ResponseWriter, request *http.Request) {
 
 	ctx := request.Context()
 
+	// if use param not body
 	//title := request.FormValue("title")
 	//description := request.FormValue("description")
 	//links := request.FormValue("links")
@@ -105,15 +106,23 @@ func updateTaskHandler(w http.ResponseWriter, request *http.Request) {
 
 	ctx := request.Context()
 
-	id := chi.URLParam(request, "id")
-	shared.Log.Info().Msg("task_router: id: " + id)
+	// if use param not body
+	// id := chi.URLParam(request, "id")
+	// shared.Log.Info().Msg("task_router: id: " + id)
 
-	title := request.FormValue("title")
-	description := request.FormValue("description")
-	links := request.FormValue("links")
-	projectIDForm := request.FormValue("project_id")
+	// title := request.FormValue("title")
+	// description := request.FormValue("description")
+	// links := request.FormValue("links")
+	// projectIDForm := request.FormValue("project_id")
 
-	resp, err := taskService.UpdateTask(ctx, id, title, description, links, projectIDForm)
+	newTask := &TaskItem{}
+	err := json.NewDecoder(request.Body).Decode(&newTask)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp, err := taskService.UpdateTask(ctx, newTask.ID, newTask.Title, newTask.Description, newTask.Link, newTask.ProjectID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
