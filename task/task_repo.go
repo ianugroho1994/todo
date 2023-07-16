@@ -23,9 +23,11 @@ func NewTaskRepository() TaskRepository {
 }
 
 func (r *TaskRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, task *TaskItem) error {
-	query := `INSERT INTO tasks (id, title, description, links, project_id, is_todo, created_at, done_at) VALUES ($1, $2, $3, $4, $5, 6$, $7, $8)
+	query := `
+	INSERT INTO tasks (id, title, description, links, project_id, is_todo, created_at, done_at) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	ON CONFLICT(id)
-				DO UPDATE SET title= $2, description= $3, link= $4, project_id= $5, is_todo= $6, done_at= $8`
+	DO UPDATE SET title = $2, description = $3, link = $4, project_id = $5, is_todo = $6, done_at = $8`
 
 	res, err := tx.Exec(ctx, query, task.ID, task.Title, task.Description, task.Link, task.ProjectID, task.IsTodo, task.CreatedAt, task.DoneAt)
 	if err != nil {
