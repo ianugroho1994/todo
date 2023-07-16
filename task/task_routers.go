@@ -36,6 +36,7 @@ func listTasksByProjectHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	projectID := chi.URLParam(request, "project_id")
+	shared.Log.Info().Msg("task_router: id: " + projectID)
 
 	resp, err := taskService.ListTasksByProject(ctx, projectID)
 	if err != nil {
@@ -52,6 +53,7 @@ func getTaskByIDHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	id := chi.URLParam(request, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
 	resp, err := taskService.GetTaskByID(ctx, id)
 	if err != nil {
@@ -97,6 +99,7 @@ func updateTaskHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	id := chi.URLParam(request, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
 	title := request.FormValue("title")
 	description := request.FormValue("description")
@@ -118,6 +121,7 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	id := chi.URLParam(r, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
 	err := taskService.DeleteTask(ctx, id)
 	if err != nil {
@@ -132,6 +136,7 @@ func makeTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	id := chi.URLParam(r, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
 	err := taskService.MakeTaskDone(ctx, id)
 	if err != nil {
@@ -146,6 +151,7 @@ func makeTaskTodoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	id := chi.URLParam(r, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
 	err := taskService.MakeTaskTodo(ctx, id)
 	if err != nil {

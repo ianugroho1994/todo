@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ianugroho1994/todo/shared"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -28,12 +29,13 @@ func (r *TaskRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, task *TaskIte
 
 	res, err := tx.Exec(ctx, query, task.ID, task.Title, task.Description, task.Link, task.ProjectID, task.IsTodo, task.CreatedAt, task.DoneAt)
 	if err != nil {
+		shared.Log.Error().Err(err).Msg("task_repo: failed to store task ")
 		return err
 	}
 
 	affected := res.RowsAffected()
 	if affected != 1 {
-		return errors.New("todo: failed to store task")
+		return errors.New("task_repo: there is no rows affected")
 	}
 
 	return nil
@@ -44,7 +46,7 @@ func (r *TaskRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string) 
 
 	res, err := r.fetch(ctx, tx, query, id)
 	if err != nil {
-		err = errors.New("todo: failed to fetch task")
+		shared.Log.Error().Err(err).Msg("task_repo: failed to fetch task by id: " + id)
 		return nil, err
 	}
 
@@ -59,7 +61,7 @@ func (r *TaskRepositoryImpl) GetByProjectID(ctx context.Context, tx pgx.Tx, proj
 	query := `SELECT * FROM tasks WHERE project_id = ?`
 	res, err := r.fetch(ctx, tx, query, projectID)
 	if err != nil {
-		err = errors.New("todo: failed to fetch task")
+		shared.Log.Error().Err(err).Msg("task_repo: failed to fetch task by project id: " + projectID)
 		return nil, err
 	}
 
@@ -100,9 +102,10 @@ func (r *TaskRepositoryImpl) Delete(ctx context.Context, tx pgx.Tx, id string) e
 
 	res, err := tx.Exec(ctx, query, id)
 	if err != nil {
+		shared.Log.Error().Err(err).Msg("task_repo: failed to delete task by id: " + id)
 		return err
 	}
 	affected := res.RowsAffected()
-	fmt.Println("Delete affected: %d", affected)
+	shared.Log.Info().Msg(fmt.Sprintf("task_repo: delete affected: %d", affected))
 	return nil
 }

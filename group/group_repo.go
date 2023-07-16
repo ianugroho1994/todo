@@ -43,7 +43,6 @@ func (r *GroupRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string)
 	query := `SELECT * FROM groups WHERE id = ?`
 	res, err := r.fetch(ctx, tx, query, id)
 	if err != nil {
-		err = errors.New("todo: failed to fetch group")
 		return nil, err
 	}
 
@@ -58,7 +57,6 @@ func (r *GroupRepositoryImpl) GetAll(ctx context.Context, tx pgx.Tx) ([]*GroupIt
 	query := `SELECT * FROM groups ORDER BY created_at DESC`
 	res, err := r.fetch(ctx, tx, query)
 	if err != nil {
-		err = errors.New("todo: failed to fetch task")
 		return nil, err
 	}
 

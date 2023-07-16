@@ -44,7 +44,6 @@ func (r *ProjectRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id strin
 	query := `SELECT * FROM projects WHERE id = ?`
 	res, err := r.fetch(ctx, tx, query, id)
 	if err != nil {
-		err = errors.New("todo: failed to fetch project")
 		return nil, err
 	}
 
@@ -59,7 +58,6 @@ func (r *ProjectRepositoryImpl) GetByGroupID(ctx context.Context, tx pgx.Tx, gro
 	query := `SELECT * FROM projects WHERE group_id = ?`
 	res, err := r.fetch(ctx, tx, query, groupID)
 	if err != nil {
-		err = errors.New("todo: failed to fetch task")
 		return nil, err
 	}
 
