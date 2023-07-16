@@ -11,8 +11,8 @@ import (
 type TaskItem struct {
 	ID          string    `json:"id" db:"id"`
 	Title       string    `json:"title" db:"title"`
-	Description *string   `json:"description" db:"description"`
-	Link        *string   `json:"link" db:"link"`
+	Description string    `json:"description" db:"description"`
+	Link        string    `json:"link" db:"link"`
 	ProjectID   string    `json:"project_id" db:"project_id"`
 	IsTodo      bool      `json:"is_todo" db:"is_todo"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
