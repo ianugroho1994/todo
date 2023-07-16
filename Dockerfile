@@ -35,6 +35,6 @@ EXPOSE $http_port
 WORKDIR /app
 
 COPY ./build/todo /app/
-COPY ./config.yml /app/
+#COPY ./config.yml /app/
 RUN mkdir -p /app/cache
 CMD ["./todo"]
