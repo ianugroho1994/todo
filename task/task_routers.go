@@ -19,8 +19,8 @@ func TaskRouters() *chi.Mux {
 
 	r.Get("/project/{project_id}", listTasksByProjectHandler)
 	r.Get("/{id}", getTaskByIDHandler)
-	r.Post("/", updateTaskHandler)
-	r.Put("/{id}", createTaskHandler)
+	r.Post("/", createTaskHandler)
+	r.Put("/{id}", updateTaskHandler)
 	r.Delete("/{id}", deleteTaskHandler)
 	r.Put("/{id}/done", makeTaskDoneHandler)
 	r.Put("/{id}/todo", makeTaskTodoHandler)
