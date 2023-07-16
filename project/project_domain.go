@@ -8,7 +8,7 @@ import (
 )
 
 type ProjectItem struct {
-	ID        ulid.ULID `json:"id" db:"id"`
+	ID        string    `json:"id" db:"id"`
 	Title     string    `json:"title" db:"title"`
 	GroupID   string    `json:"group_id" db:"group_id"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
@@ -21,7 +21,7 @@ func NewProjectItem(title, groupID string) (*ProjectItem, error) {
 	}
 
 	return &ProjectItem{
-		ID:      ulid.Make(),
+		ID:      ulid.Make().String(),
 		Title:   title,
 		GroupID: groupID,
 	}, nil

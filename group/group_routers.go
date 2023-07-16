@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ianugroho1994/todo/shared"
-	"github.com/oklog/ulid/v2"
 )
 
 var (
@@ -67,14 +66,9 @@ func createGroupHandler(w http.ResponseWriter, request *http.Request) {
 func deleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	itemId := chi.URLParam(r, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(r, "id")
 
-	err = groupService.DeleteGroup(ctx, id.String())
+	err := groupService.DeleteGroup(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return

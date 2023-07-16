@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ianugroho1994/todo/shared"
-	"github.com/oklog/ulid/v2"
 )
 
 var (
@@ -33,14 +32,9 @@ func initTaskRouter() {
 func listProjectsByGroupHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	itemId := chi.URLParam(request, "group_id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(request, "group_id")
 
-	resp, err := projectService.ListProjectsByGroup(ctx, id.String())
+	resp, err := projectService.ListProjectsByGroup(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -59,22 +53,12 @@ func createProjectHandler(w http.ResponseWriter, request *http.Request) {
 
 	ctx := request.Context()
 
-	itemId := chi.URLParam(request, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(request, "id")
 
 	title := request.FormValue("title")
 	groupIDForm := request.FormValue("group_id")
-	groupID, err := ulid.Parse(groupIDForm)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
 
-	resp, err := projectService.UpdateProject(ctx, id.String(), title, groupID.String())
+	resp, err := projectService.UpdateProject(ctx, id, title, groupIDForm)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -88,14 +72,9 @@ func createProjectHandler(w http.ResponseWriter, request *http.Request) {
 func deleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	itemId := chi.URLParam(r, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(r, "id")
 
-	err = projectService.DeleteProject(ctx, id.String())
+	err := projectService.DeleteProject(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return

@@ -8,7 +8,7 @@ import (
 )
 
 type GroupItem struct {
-	ID        ulid.ULID `json:"id" db:"id"`
+	ID        string    `json:"id" db:"id"`
 	Name      string    `json:"name" db:"name"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
@@ -20,7 +20,7 @@ func NewGroupItem(name string) (*GroupItem, error) {
 	}
 
 	return &GroupItem{
-		ID:   ulid.Make(),
+		ID:   ulid.Make().String(),
 		Name: name,
 	}, nil
 }
