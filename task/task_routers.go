@@ -74,12 +74,19 @@ func createTaskHandler(w http.ResponseWriter, request *http.Request) {
 
 	ctx := request.Context()
 
-	title := request.FormValue("title")
-	description := request.FormValue("description")
-	links := request.FormValue("links")
-	projectIDForm := request.FormValue("project_id")
+	//title := request.FormValue("title")
+	//description := request.FormValue("description")
+	//links := request.FormValue("links")
+	//projectIDForm := request.FormValue("project_id")
 
-	resp, err := taskService.CreateTask(ctx, title, description, links, projectIDForm)
+	newTask := &TaskItem{}
+	err := json.NewDecoder(request.Body).Decode(&newTask)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp, err := taskService.CreateTask(ctx, newTask.Title, newTask.Description, newTask.Link, newTask.ProjectID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
