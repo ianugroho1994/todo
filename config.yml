@@ -4,8 +4,8 @@ listen:
 
 db:
   user: postgres
-  password: postgres
+  password: H4rdtmann
   db_name: todo
-  host: 127.0.0.1
+  host: postgres
   port: 5432 
   ssl_mode: disable

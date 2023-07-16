@@ -24,7 +24,7 @@ RUN apk add --update --no-cache \
 ENV PORT $http_port
 ENV IN_DB_USER postgres
 ENV IN_DB_PASWWORD H4rdtmann
-ENV IN_DB_HOST 172.20.0.2
+ENV IN_DB_HOST postgres
 ENV IN_DB_PORT 5432
 ENV IN_DB_NAME todo
 ENV IN_DB_SSL disable

@@ -3,6 +3,9 @@ networks:
   database-postgres:
     name: "postgre-db-net"
     external: true
+  traefik-proxy:
+    name: "traefik-proxy"
+    external: true
 services:
   todo-be:
     container_name: todo-be
