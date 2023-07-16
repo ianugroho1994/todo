@@ -42,7 +42,7 @@ func (r *TaskRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, task *TaskIte
 }
 
 func (r *TaskRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string) (*TaskItem, error) {
-	query := `SELECT * FROM tasks WHERE id = ?`
+	query := `SELECT * FROM tasks WHERE id = $1`
 
 	res, err := r.fetch(ctx, tx, query, id)
 	if err != nil {
@@ -58,7 +58,7 @@ func (r *TaskRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string) 
 }
 
 func (r *TaskRepositoryImpl) GetByProjectID(ctx context.Context, tx pgx.Tx, projectID string) ([]*TaskItem, error) {
-	query := `SELECT * FROM tasks WHERE project_id = ?`
+	query := `SELECT * FROM tasks WHERE project_id = $1`
 	res, err := r.fetch(ctx, tx, query, projectID)
 	if err != nil {
 		shared.Log.Error().Err(err).Msg("task_repo: failed to fetch task by project id: " + projectID)
@@ -98,7 +98,7 @@ func (r *TaskRepositoryImpl) fetch(ctx context.Context, tx pgx.Tx, query string,
 }
 
 func (r *TaskRepositoryImpl) Delete(ctx context.Context, tx pgx.Tx, id string) error {
-	query := `DELETE FROM tasks WHERE id = ?`
+	query := `DELETE FROM tasks WHERE id = $1`
 
 	res, err := tx.Exec(ctx, query, id)
 	if err != nil {

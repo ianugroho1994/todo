@@ -22,7 +22,7 @@ func NewGroupRepository() GroupRepository {
 }
 
 func (r *GroupRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, project *GroupItem) error {
-	query := `INSERT INTO groups (id, name) VALUES (?, ?)
+	query := `INSERT INTO groups (id, name) VALUES ($1, $2)
 	ON CONFLICT(id)
 	DO UPDATE SET name = $2`
 
@@ -40,7 +40,7 @@ func (r *GroupRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, project *Gro
 }
 
 func (r *GroupRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string) (*GroupItem, error) {
-	query := `SELECT * FROM groups WHERE id = ?`
+	query := `SELECT * FROM groups WHERE id = $1`
 	res, err := r.fetch(ctx, tx, query, id)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (r *GroupRepositoryImpl) fetch(ctx context.Context, tx pgx.Tx, query string
 }
 
 func (r *GroupRepositoryImpl) Delete(ctx context.Context, tx pgx.Tx, id string) error {
-	query := `DELETE FROM groups WHERE id = ?`
+	query := `DELETE FROM groups WHERE id = $1`
 
 	res, err := tx.Exec(ctx, query, id)
 	if err != nil {

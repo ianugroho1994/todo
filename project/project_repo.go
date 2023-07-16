@@ -22,7 +22,7 @@ func NewProjectRepository() ProjectRepository {
 }
 
 func (r *ProjectRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, project *ProjectItem) error {
-	query := `INSERT INTO projects (id, title, group_id) VALUES (?, ?, ?)
+	query := `INSERT INTO projects (id, title, group_id) VALUES ($1, $2, $3)
 	ON CONFLICT(id)
 	DO UPDATE SET title= ?$2 and group_id= $3`
 
@@ -55,7 +55,7 @@ func (r *ProjectRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id strin
 }
 
 func (r *ProjectRepositoryImpl) GetByGroupID(ctx context.Context, tx pgx.Tx, groupID string) ([]*ProjectItem, error) {
-	query := `SELECT * FROM projects WHERE group_id = ?`
+	query := `SELECT * FROM projects WHERE group_id = $1`
 	res, err := r.fetch(ctx, tx, query, groupID)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *ProjectRepositoryImpl) fetch(ctx context.Context, tx pgx.Tx, query stri
 }
 
 func (r *ProjectRepositoryImpl) Delete(ctx context.Context, tx pgx.Tx, id string) error {
-	query := `DELETE FROM projects WHERE id = ?`
+	query := `DELETE FROM projects WHERE id = $1`
 
 	res, err := tx.Exec(ctx, query, id)
 	if err != nil {
