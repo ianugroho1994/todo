@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ianugroho1994/todo/shared"
-	"github.com/oklog/ulid/v2"
 )
 
 var (
@@ -18,12 +17,10 @@ func GroupRouters() *chi.Mux {
 
 	r := chi.NewMux()
 
-	r.Route("/groups", func(r chi.Router) {
-		r.Get("/", listGroupsByGroupHandler)
-		r.Post("/", createGroupHandler)
-		r.Put("/{id}", createGroupHandler)
-		r.Delete("/{id}", deleteProjectHandler)
-	})
+	r.Get("/", listGroupsByGroupHandler)
+	r.Post("/", createGroupHandler)
+	r.Put("/{id}", createGroupHandler)
+	r.Delete("/{id}", deleteProjectHandler)
 
 	return r
 }
@@ -55,7 +52,17 @@ func createGroupHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	name := request.FormValue("name")
-	resp, err := groupService.CreateGroup(ctx, name)
+	id := request.FormValue("id")
+
+	var resp *GroupItem
+	var err error
+
+	if id != "" {
+		resp, err = groupService.UpdateGroup(ctx, id, name)
+	} else {
+		resp, err = groupService.CreateGroup(ctx, name)
+	}
+
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -69,14 +76,9 @@ func createGroupHandler(w http.ResponseWriter, request *http.Request) {
 func deleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	itemId := chi.URLParam(r, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(r, "id")
 
-	err = groupService.DeleteGroup(ctx, id.String())
+	err := groupService.DeleteGroup(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return

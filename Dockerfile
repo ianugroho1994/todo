@@ -22,6 +22,8 @@ RUN apk add --update --no-cache \
 # RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
 ENV PORT $http_port
+ENV IN_DB_USER postgres
+ENV IN_DB_PASWWORD H4rdtmann
 ENV IN_DB_HOST postgres
 ENV IN_DB_PORT 5432
 ENV IN_DB_NAME todo
@@ -33,5 +35,6 @@ EXPOSE $http_port
 WORKDIR /app
 
 COPY ./build/todo /app/
+#COPY ./config.yml /app/
 RUN mkdir -p /app/cache
 CMD ["./todo"]

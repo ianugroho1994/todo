@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ianugroho1994/todo/project"
 	"github.com/ianugroho1994/todo/shared"
-	"github.com/oklog/ulid/v2"
 )
 
 var (
@@ -18,34 +18,30 @@ func TaskRouters() *chi.Mux {
 
 	r := chi.NewMux()
 
-	r.Route("/tasks", func(r chi.Router) {
-		r.Get("/{project_id}", listTasksByProjectHandler)
-		r.Get("/{id}", getTaskByIDHandler)
-		r.Post("/", createTaskHandler)
-		r.Put("/{id}", createTaskHandler)
-		r.Delete("/{id}", deleteTaskHandler)
-		r.Put("/{id}/done", makeTaskDoneHandler)
-		r.Put("/{id}/todo", makeTaskTodoHandler)
-	})
+	r.Get("/project/{project_id}", listTasksByProjectHandler)
+	r.Get("/{id}", getTaskByIDHandler)
+	r.Post("/", createTaskHandler)
+	r.Put("/{id}", updateTaskHandler)
+	r.Delete("/{id}", deleteTaskHandler)
+	r.Put("/{id}/done", makeTaskDoneHandler)
+	r.Put("/{id}/todo", makeTaskTodoHandler)
 
 	return r
 }
 
 func initTaskRouter() {
-	taskService = NewTaskService(NewTaskRepository())
+	taskService = NewTaskService(
+		NewTaskRepository(),
+		project.NewProjectRepositoryForTask())
 }
 
 func listTasksByProjectHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	itemId := chi.URLParam(request, "project_id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	projectID := chi.URLParam(request, "project_id")
+	shared.Log.Info().Msg("task_router: id: " + projectID)
 
-	resp, err := taskService.ListTasksByProject(ctx, id.String())
+	resp, err := taskService.ListTasksByProject(ctx, projectID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -59,14 +55,10 @@ func listTasksByProjectHandler(w http.ResponseWriter, request *http.Request) {
 func getTaskByIDHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	itemId := chi.URLParam(request, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(request, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
-	resp, err := taskService.GetTaskByID(ctx, id.String())
+	resp, err := taskService.GetTaskByID(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -85,24 +77,55 @@ func createTaskHandler(w http.ResponseWriter, request *http.Request) {
 
 	ctx := request.Context()
 
-	itemId := chi.URLParam(request, "id")
-	id, err := ulid.Parse(itemId)
+	// if use param not body
+	//title := request.FormValue("title")
+	//description := request.FormValue("description")
+	//links := request.FormValue("links")
+	//projectIDForm := request.FormValue("project_id")
+
+	newTask := &TaskItem{}
+	err := json.NewDecoder(request.Body).Decode(&newTask)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	title := request.FormValue("title")
-	description := request.FormValue("description")
-	links := request.FormValue("links")
-	projectIDForm := request.FormValue("project_id")
-	projectID, err := ulid.Parse(projectIDForm)
+	resp, err := taskService.CreateTask(ctx, newTask.Title, newTask.Description, newTask.Link, newTask.ProjectID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp, err := taskService.UpdateTask(ctx, id.String(), title, description, links, projectID.String())
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func updateTaskHandler(w http.ResponseWriter, request *http.Request) {
+	if err := request.ParseForm(); err != nil {
+		shared.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	ctx := request.Context()
+
+	// if use param not body
+	// id := chi.URLParam(request, "id")
+	// shared.Log.Info().Msg("task_router: id: " + id)
+
+	// title := request.FormValue("title")
+	// description := request.FormValue("description")
+	// links := request.FormValue("links")
+	// projectIDForm := request.FormValue("project_id")
+
+	newTask := &TaskItem{}
+	err := json.NewDecoder(request.Body).Decode(&newTask)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp, err := taskService.UpdateTask(ctx, newTask.ID, newTask.Title, newTask.Description, newTask.Link, newTask.ProjectID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -116,14 +139,10 @@ func createTaskHandler(w http.ResponseWriter, request *http.Request) {
 func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	itemId := chi.URLParam(r, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(r, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
-	err = taskService.DeleteTask(ctx, id.String())
+	err := taskService.DeleteTask(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -135,14 +154,10 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 func makeTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	itemId := chi.URLParam(r, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(r, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
-	err = taskService.MakeTaskDone(ctx, id.String())
+	err := taskService.MakeTaskDone(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -154,14 +169,10 @@ func makeTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 func makeTaskTodoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	itemId := chi.URLParam(r, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(r, "id")
+	shared.Log.Info().Msg("task_router: id: " + id)
 
-	err = taskService.MakeTaskTodo(ctx, id.String())
+	err := taskService.MakeTaskTodo(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return

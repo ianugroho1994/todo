@@ -9,7 +9,7 @@ import (
 )
 
 type TaskItem struct {
-	ID          ulid.ULID `json:"id" db:"id"`
+	ID          string    `json:"id" db:"id"`
 	Title       string    `json:"title" db:"title"`
 	Description string    `json:"description" db:"description"`
 	Link        string    `json:"link" db:"link"`
@@ -25,7 +25,7 @@ func NewTaskItem(title, description string, links string, projectID string) (*Ta
 	}
 
 	return &TaskItem{
-		ID:          ulid.Make(),
+		ID:          ulid.Make().String(),
 		Title:       title,
 		Description: description,
 		Link:        links,

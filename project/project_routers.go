@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ianugroho1994/todo/group"
 	"github.com/ianugroho1994/todo/shared"
-	"github.com/oklog/ulid/v2"
 )
 
 var (
@@ -18,31 +18,26 @@ func ProjectRouters() *chi.Mux {
 
 	r := chi.NewMux()
 
-	r.Route("/projects", func(r chi.Router) {
-		r.Get("/{group_id}", listProjectsByGroupHandler)
-		r.Post("/", createProjectHandler)
-		r.Put("/{id}", createProjectHandler)
-		r.Delete("/{id}", deleteProjectHandler)
-	})
+	r.Get("/{group_id}", listProjectsByGroupHandler)
+	r.Post("/", createProjectHandler)
+	r.Put("/{id}", updateProjectHandler)
+	r.Delete("/{id}", deleteProjectHandler)
 
 	return r
 }
 
 func initTaskRouter() {
-	projectService = NewProjectService(NewProjectRepository())
+	projectService = NewProjectService(
+		NewProjectRepository(),
+		group.NewProjectRepositoryForTask())
 }
 
 func listProjectsByGroupHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	itemId := chi.URLParam(request, "group_id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(request, "group_id")
 
-	resp, err := projectService.ListProjectsByGroup(ctx, id.String())
+	resp, err := projectService.ListProjectsByGroup(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -61,22 +56,40 @@ func createProjectHandler(w http.ResponseWriter, request *http.Request) {
 
 	ctx := request.Context()
 
-	itemId := chi.URLParam(request, "id")
-	id, err := ulid.Parse(itemId)
+	newProject := &ProjectItem{}
+	err := json.NewDecoder(request.Body).Decode(&newProject)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	title := request.FormValue("title")
-	groupIDForm := request.FormValue("group_id")
-	groupID, err := ulid.Parse(groupIDForm)
+	resp, err := projectService.CreateProject(ctx, newProject.Title, newProject.GroupID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp, err := projectService.UpdateProject(ctx, id.String(), title, groupID.String())
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func updateProjectHandler(w http.ResponseWriter, request *http.Request) {
+	if err := request.ParseForm(); err != nil {
+		shared.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	ctx := request.Context()
+
+	newProject := &ProjectItem{}
+	err := json.NewDecoder(request.Body).Decode(&newProject)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp, err := projectService.UpdateProject(ctx, newProject.ID, newProject.Title, newProject.GroupID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -90,14 +103,9 @@ func createProjectHandler(w http.ResponseWriter, request *http.Request) {
 func deleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	itemId := chi.URLParam(r, "id")
-	id, err := ulid.Parse(itemId)
-	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
+	id := chi.URLParam(r, "id")
 
-	err = projectService.DeleteProject(ctx, id.String())
+	err := projectService.DeleteProject(ctx, id)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return

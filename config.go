@@ -38,27 +38,39 @@ func loadEnvUint(key string, result *uint) {
 /* Configuration */
 
 type pgConfig struct {
-	Host string `yaml:"host" json:"host"`
-	Port uint   `yaml:"port" json:"port"`
+	User     string `yaml:"user" json:"user"`
+	Password string `yaml:"password" json:"password"`
+	Host     string `yaml:"host" json:"host"`
+	Port     uint   `yaml:"port" json:"port"`
 
 	DBName  string `yaml:"db_name" json:"db_name"`
 	SslMode string `yaml:"ssl_mode" json:"ssl_mode"`
 }
 
 func (p pgConfig) ConnStr() string {
-	return fmt.Sprintf("host=%s port=%d database=%s sslmode=%s", p.Host, p.Port, p.DBName, p.SslMode)
+	return fmt.Sprintf("user=%s password=%s host=%s port=%d database=%s sslmode=%s",
+		p.User,
+		p.Password,
+		p.Host,
+		p.Port,
+		p.DBName,
+		p.SslMode)
 }
 
 func defaultPgConfig() pgConfig {
 	return pgConfig{
-		Host:    "localhost",
-		Port:    5432,
-		DBName:  "todo",
-		SslMode: "disable",
+		User:     "postgres",
+		Password: "H4rdtmann",
+		Host:     "172.20.0.2",
+		Port:     5432,
+		DBName:   "todo",
+		SslMode:  "disable",
 	}
 }
 
 func (p *pgConfig) loadFromEnv() {
+	loadEnvStr("IN_DB_USER", &p.User)
+	loadEnvStr("IN_DB_PASSWORD", &p.Password)
 	loadEnvStr("IN_DB_HOST", &p.Host)
 	loadEnvUint("IN_DB_PORT", &p.Port)
 	loadEnvStr("IN_DB_NAME", &p.DBName)
