@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ianugroho1994/todo/project"
 	"github.com/ianugroho1994/todo/shared"
 	"github.com/jackc/pgx/v5"
 )
@@ -19,12 +20,14 @@ type TaskService interface {
 }
 
 type TaskServiceImpl struct {
-	taskRepository TaskRepository
+	taskRepository    TaskRepository
+	projectRepository project.ProjectRepositoryForTask
 }
 
-func NewTaskService(taskRepo TaskRepository) TaskService {
+func NewTaskService(taskRepo TaskRepository, projectRepo project.ProjectRepositoryForTask) TaskService {
 	return &TaskServiceImpl{
-		taskRepository: taskRepo,
+		taskRepository:    taskRepo,
+		projectRepository: projectRepo,
 	}
 }
 
@@ -74,6 +77,17 @@ func (s *TaskServiceImpl) CreateTask(ctx context.Context, title string, descript
 	tx, err := shared.Pool.Begin(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	if projectID == "" {
+		projectIDTemp, err := s.projectRepository.GetParentProjectID(ctx, tx)
+		if err != nil {
+			shared.Log.Error().Err(err).Msg("task_service: failed to store task item")
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		todoItem.ProjectID = projectIDTemp
 	}
 
 	err = s.taskRepository.Store(ctx, tx, todoItem)

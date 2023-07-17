@@ -33,7 +33,7 @@ func (s *GroupServiceImpl) ListAllGroup(ctx context.Context) ([]*GroupItem, erro
 
 	res, err := s.groupRepository.GetAll(ctx, tx)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to get groups")
+		shared.Log.Error().Err(err).Msg("group-service: failed to get groups")
 		tx.Rollback(ctx)
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (s *GroupServiceImpl) CreateGroup(ctx context.Context, name string) (*Group
 		name)
 
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to create group item")
+		shared.Log.Error().Err(err).Msg("group-service: failed to create group item")
 		return nil, err
 	}
 
@@ -57,7 +57,7 @@ func (s *GroupServiceImpl) CreateGroup(ctx context.Context, name string) (*Group
 
 	err = s.groupRepository.Store(ctx, tx, groupItem)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to store group item")
+		shared.Log.Error().Err(err).Msg("group-service: failed to store group item")
 		tx.Rollback(ctx)
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (s *GroupServiceImpl) UpdateGroup(ctx context.Context, id string, name stri
 
 	err = s.groupRepository.Store(ctx, tx, res)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to store group item")
+		shared.Log.Error().Err(err).Msg("group-service: failed to store group item")
 		tx.Rollback(ctx)
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (s *GroupServiceImpl) DeleteGroup(ctx context.Context, id string) error {
 
 	err = s.groupRepository.Delete(ctx, tx, id)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to delete group item")
+		shared.Log.Error().Err(err).Msg("group-service: failed to delete group item")
 		tx.Rollback(ctx)
 		return err
 	}
@@ -108,12 +108,12 @@ func (s *GroupServiceImpl) DeleteGroup(ctx context.Context, id string) error {
 func (s *GroupServiceImpl) fetchByID(ctx context.Context, tx pgx.Tx, id string) (*GroupItem, error) {
 	res, err := s.groupRepository.GetByID(ctx, tx, id)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to get group by id")
+		shared.Log.Error().Err(err).Msg("group-service: failed to get group by id")
 		return nil, err
 	}
 
 	if res == nil {
-		return nil, errors.New("todo: group not found")
+		return nil, errors.New("group-service: result nil, group not found")
 	}
 
 	return res, nil

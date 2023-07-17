@@ -3,7 +3,9 @@ package project
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/ianugroho1994/todo/group"
 	"github.com/ianugroho1994/todo/shared"
 	"github.com/jackc/pgx/v5"
 )
@@ -17,11 +19,13 @@ type ProjectService interface {
 
 type ProjectServiceImpl struct {
 	projectRepository ProjectRepository
+	groupRepository   group.GroupRepositoryForProject
 }
 
-func NewProjectService(projectRepo ProjectRepository) ProjectService {
+func NewProjectService(projectRepo ProjectRepository, groupRepo group.GroupRepositoryForProject) ProjectService {
 	return &ProjectServiceImpl{
 		projectRepository: projectRepo,
+		groupRepository:   groupRepo,
 	}
 }
 
@@ -33,7 +37,7 @@ func (s *ProjectServiceImpl) ListProjectsByGroup(ctx context.Context, groupID st
 
 	res, err := s.projectRepository.GetByGroupID(ctx, tx, groupID)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to get project by group id")
+		shared.Log.Error().Err(err).Msg(fmt.Sprintf("project-service: failed to get project by group id: %s", groupID))
 		tx.Rollback(ctx)
 		return nil, err
 	}
@@ -47,7 +51,7 @@ func (s *ProjectServiceImpl) CreateProject(ctx context.Context, title string, gr
 		groupID)
 
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to create project item")
+		shared.Log.Error().Err(err).Msg("project_service: failed to create project item")
 		return nil, err
 	}
 
@@ -56,9 +60,20 @@ func (s *ProjectServiceImpl) CreateProject(ctx context.Context, title string, gr
 		return nil, err
 	}
 
+	if groupID == "" {
+		groupIDTemp, err := s.groupRepository.GetParentGroupID(ctx, tx)
+		if err != nil {
+			shared.Log.Error().Err(err).Msg("project_service: failed to store project item")
+			tx.Rollback(ctx)
+			return nil, err
+		}
+
+		projectItem.GroupID = groupIDTemp
+	}
+
 	err = s.projectRepository.Store(ctx, tx, projectItem)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to store project item")
+		shared.Log.Error().Err(err).Msg("project_service: failed to store project item")
 		tx.Rollback(ctx)
 		return nil, err
 	}
@@ -83,7 +98,7 @@ func (s *ProjectServiceImpl) UpdateProject(ctx context.Context, id string, title
 
 	err = s.projectRepository.Store(ctx, tx, res)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to store project item")
+		shared.Log.Error().Err(err).Msg("project_service: failed to store project item")
 		tx.Rollback(ctx)
 		return nil, err
 	}
@@ -99,7 +114,7 @@ func (s *ProjectServiceImpl) DeleteProject(ctx context.Context, id string) error
 
 	err = s.projectRepository.Delete(ctx, tx, id)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to delete project item")
+		shared.Log.Error().Err(err).Msg(fmt.Sprintf("project_service: failed to delete project item %d", id))
 		tx.Rollback(ctx)
 		return err
 	}
@@ -110,7 +125,7 @@ func (s *ProjectServiceImpl) DeleteProject(ctx context.Context, id string) error
 func (s *ProjectServiceImpl) fetchByID(ctx context.Context, tx pgx.Tx, id string) (*ProjectItem, error) {
 	res, err := s.projectRepository.GetByID(ctx, tx, id)
 	if err != nil {
-		shared.Log.Error().Err(err).Msg("todo: failed to get task by project id")
+		shared.Log.Error().Err(err).Msg(fmt.Sprintf("project_service: failed to get task by project id %s", id))
 		return nil, err
 	}
 

@@ -52,7 +52,17 @@ func createGroupHandler(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	name := request.FormValue("name")
-	resp, err := groupService.CreateGroup(ctx, name)
+	id := request.FormValue("id")
+
+	var resp *GroupItem
+	var err error
+
+	if id != "" {
+		resp, err = groupService.UpdateGroup(ctx, id, name)
+	} else {
+		resp, err = groupService.CreateGroup(ctx, name)
+	}
+
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return

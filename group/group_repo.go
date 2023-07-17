@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ianugroho1994/todo/shared"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -15,14 +16,23 @@ type GroupRepository interface {
 	Delete(ctx context.Context, tx pgx.Tx, id string) error
 }
 
+type GroupRepositoryForProject interface {
+	GetParentGroupID(ctx context.Context, tx pgx.Tx) (string, error)
+}
+
 type GroupRepositoryImpl struct{}
 
 func NewGroupRepository() GroupRepository {
 	return &GroupRepositoryImpl{}
 }
 
+func NewProjectRepositoryForTask() GroupRepositoryForProject {
+	return &GroupRepositoryImpl{}
+}
+
 func (r *GroupRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, project *GroupItem) error {
-	query := `INSERT INTO groups (id, name) VALUES ($1, $2)
+	query := `
+	INSERT INTO groups (id, name) VALUES ($1, $2)
 	ON CONFLICT(id)
 	DO UPDATE SET name = $2`
 
@@ -33,10 +43,25 @@ func (r *GroupRepositoryImpl) Store(ctx context.Context, tx pgx.Tx, project *Gro
 
 	affected := res.RowsAffected()
 	if affected != 1 {
-		return errors.New("todo: failed to store group")
+		return errors.New("group - repo: failed to store group")
 	}
 
 	return nil
+}
+
+func (r *GroupRepositoryImpl) GetParentGroupID(ctx context.Context, tx pgx.Tx) (string, error) {
+	parentTitle := "parent"
+	query := `SELECT * FROM groups WHERE name = $1`
+	res, err := r.fetch(ctx, tx, query, parentTitle)
+	if err != nil {
+		return "", err
+	}
+
+	if len(res) <= 0 {
+		return "", nil
+	}
+
+	return res[0].ID, nil
 }
 
 func (r *GroupRepositoryImpl) GetByID(ctx context.Context, tx pgx.Tx, id string) (*GroupItem, error) {
@@ -100,6 +125,6 @@ func (r *GroupRepositoryImpl) Delete(ctx context.Context, tx pgx.Tx, id string) 
 		return err
 	}
 	affected := res.RowsAffected()
-	fmt.Println("Delete affected: %d", affected)
+	shared.Log.Info().Msg(fmt.Sprintf("Delete affected: %d", affected))
 	return nil
 }

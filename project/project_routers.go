@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ianugroho1994/todo/group"
 	"github.com/ianugroho1994/todo/shared"
 )
 
@@ -19,14 +20,16 @@ func ProjectRouters() *chi.Mux {
 
 	r.Get("/{group_id}", listProjectsByGroupHandler)
 	r.Post("/", createProjectHandler)
-	r.Put("/{id}", createProjectHandler)
+	r.Put("/{id}", updateProjectHandler)
 	r.Delete("/{id}", deleteProjectHandler)
 
 	return r
 }
 
 func initTaskRouter() {
-	projectService = NewProjectService(NewProjectRepository())
+	projectService = NewProjectService(
+		NewProjectRepository(),
+		group.NewProjectRepositoryForTask())
 }
 
 func listProjectsByGroupHandler(w http.ResponseWriter, request *http.Request) {
@@ -53,12 +56,40 @@ func createProjectHandler(w http.ResponseWriter, request *http.Request) {
 
 	ctx := request.Context()
 
-	id := chi.URLParam(request, "id")
+	newProject := &ProjectItem{}
+	err := json.NewDecoder(request.Body).Decode(&newProject)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-	title := request.FormValue("title")
-	groupIDForm := request.FormValue("group_id")
+	resp, err := projectService.CreateProject(ctx, newProject.Title, newProject.GroupID)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-	resp, err := projectService.UpdateProject(ctx, id, title, groupIDForm)
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func updateProjectHandler(w http.ResponseWriter, request *http.Request) {
+	if err := request.ParseForm(); err != nil {
+		shared.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	ctx := request.Context()
+
+	newProject := &ProjectItem{}
+	err := json.NewDecoder(request.Body).Decode(&newProject)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp, err := projectService.UpdateProject(ctx, newProject.ID, newProject.Title, newProject.GroupID)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, err)
 		return

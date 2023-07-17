@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ianugroho1994/todo/project"
 	"github.com/ianugroho1994/todo/shared"
 )
 
@@ -29,7 +30,9 @@ func TaskRouters() *chi.Mux {
 }
 
 func initTaskRouter() {
-	taskService = NewTaskService(NewTaskRepository())
+	taskService = NewTaskService(
+		NewTaskRepository(),
+		project.NewProjectRepositoryForTask())
 }
 
 func listTasksByProjectHandler(w http.ResponseWriter, request *http.Request) {
