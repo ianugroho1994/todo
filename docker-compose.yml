@@ -3,6 +3,9 @@ networks:
   database-postgres:
     name: "postgre-db-net"
     external: true
+  traefik-proxy:
+    name: "traefik-proxy"
+    external: true
 services:
   todo-be:
     container_name: todo-be
@@ -10,8 +13,9 @@ services:
     pull_policy: always
     networks:
       - database-postgres
+      - traefik-proxy
     ports:
-      - 1326:1326
+      - 5000:1326
     labels:
       - traefik.enable=true
       - traefik.http.routers.todo.tls=true
@@ -19,6 +23,5 @@ services:
       - traefik.http.routers.todo.rule=Host(`todo.ianugroho.com`) && PathPrefix(`/v1`)
       - traefik.http.routers.todo.middlewares=todo-stripprefix
       - traefik.http.middlewares.todo-stripprefix.stripprefix.prefixes=/v1
-      - traefik.http.routers.todo.priority=100
-
-      
+      - traefik.http.routers.todo.priority=110
+      - traefik.http.services.todo-be-todo.loadbalancer.server.port=5000
