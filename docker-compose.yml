@@ -3,9 +3,6 @@ networks:
   database-postgres:
     name: "postgre-db-net"
     external: true
-  traefik-proxy:
-    name: "traefik-proxy"
-    external: true
 services:
   todo-be:
     container_name: todo-be
@@ -22,4 +19,6 @@ services:
       - traefik.http.routers.todo.rule=Host(`todo.ianugroho.com`) && PathPrefix(`/v1`)
       - traefik.http.routers.todo.middlewares=todo-stripprefix
       - traefik.http.middlewares.todo-stripprefix.stripprefix.prefixes=/v1
-      - traefik.http.routers.todo.priority=110
+      - traefik.http.routers.todo.priority=100
+
+      
